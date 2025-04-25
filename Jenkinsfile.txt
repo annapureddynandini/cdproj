@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/annapureddynandini/cdproj.git'
+            }
+        }
+
+        stage('Navigate to App Folder') {
+            steps {
+                dir('cd') {
+                    script {
+                        echo "Inside cd/ directory"
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('cd') {
+                    sh 'docker build -t 2200031819/cdproj:latest .'
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u 2200031819 --password-stdin'
+                    sh 'docker push 2200031819/cdproj:latest'
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                sh 'docker rm -f cdproj || true'
+                sh 'docker run -d -p 80:5000 --name cdproj 2200031819/cdproj:latest'
+            }
+        }
+    }
+}
